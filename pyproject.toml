@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "gpt-astra-2"
+version = "2.0.1-beta"
+description = "Frontier Meta-Cognitive Orchestration Framework"
+authors = ["Voss <vxssroott@github.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.111.0"
+uvicorn = "^0.29.0"
+networkx = "^3.2.1"
+pyyaml = "^6.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
