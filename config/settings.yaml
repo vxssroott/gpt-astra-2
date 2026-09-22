@@ -1,0 +1,18 @@
+astra:
+  version: "2.0.1-beta"
+  author: "Voss"
+  cognitive_parameters:
+    confidence_threshold: 0.85
+    max_reflection_cycles: 3
+    adversarial_strength: "high"
+  memory:
+    graph_type: "semantic"
+    persistence: "enabled"
+    storage_path: "./memory/store"
+  swarm:
+    default_population: ["Researcher", "Architect", "Critic", "Coder"]
+    parallel_execution: true
+  api:
+    host: "0.0.0.0"
+    port: 8000
+    timeout: 60

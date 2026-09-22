@@ -1,75 +1,67 @@
 import asyncio
+import logging
 from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from core.tools.forge import ToolForge
 from memory.graph.semantic_graph import KnowledgeGraph
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("ASTRA-CORE")
 
 @dataclass
 class CognitiveState:
     goal: str
-    hypothesis: str
-    evidence: List[Any]
-    confidence: float
-    reflection: str
+    hypothesis: str = ""
+    evidence: List[Any] = field(default_factory=list)
+    confidence: float = 0.0
+    reflection: str = ""
     critical_flaw: Optional[str] = None
+    cycle_count: int = 0
 
 class MetaController:
-    """
-    ASTRA 2.0 MetaController: Integrated with Self-Evolution (Forge) 
-    and Semantic Memory (Graph).
-    """
-    def __init__(self):
-        self.state = CognitiveState(goal="", hypothesis="", evidence=[], confidence=0.0, reflection="")
+    def __init__(self, config: Dict[str, Any] = None):
+        self.config = config or {"confidence_threshold": 0.85, "max_reflection_cycles": 3}
+        self.state = CognitiveState(goal="")
         self.forge = ToolForge()
         self.memory = KnowledgeGraph()
 
-    async def perceive(self, input_data: str):
-        print(f"\n[PERCEPTION] Input: {input_data}")
-        self.state.goal = input_data
-        return await self.hypothesize()
+    async def process(self, input_goal: str):
+        logger.info(f"Initializing Cognitive Loop for goal: {input_goal}")
+        self.state = CognitiveState(goal=input_goal)
+        while self.state.confidence < self.config["confidence_threshold"]:
+            if self.state.cycle_count >= self.config["max_reflection_cycles"]:
+                logger.warning("Max reflection cycles reached.")
+                break
+            self.state.cycle_count += 1
+            await self._perceive_and_hypothesize()
+            await self._execute_and_verify()
+            await self._reflect_and_optimize()
+        return self.state
 
-    async def hypothesize(self):
-        print("[HYPOTHESIS] Strategy: Deploy probes and verify via Adversarial Critic.")
-        self.state.hypothesis = "Verify goal using specialized tools and relational memory."
-        return await self.execute()
+    async def _perceive_and_hypothesize(self):
+        logger.info("[STATE: PERCEPTION] Mapping goal to semantic space...")
+        self.state.hypothesis = f"Strategic approach to solve: {self.state.goal}"
 
-    async def execute(self):
-        print("[EXECUTION] Executing cognitive tasks...")
-        
-        # Example of using the Forge to create a tool on the fly
+    async def _execute_and_verify(self):
+        logger.info("[STATE: EXECUTION] Deploying tools and swarm probes...")
         if "calculate" in self.state.goal.lower():
-            calc_tool = self.forge.forge_tool("fast_calc", "def run(x): return x * 1.1")
-            self.state.evidence.append(calc_tool(100))
-        
-        # Store discovery in Semantic Memory
-        self.memory.add_relation("ASTRA", "processed", self.state.goal)
-        self.state.evidence.append("Relational link created in memory.")
-        
-        return await self.criticize()
-
-    async def criticize(self):
-        print("[ADVERSARIAL CRITIC] Attempting to debunk current evidence...")
-        # The Critic simulates a second agent trying to find a flaw
-        if len(self.state.evidence) < 2:
-            self.state.critical_flaw = "Insufficient evidence to support hypothesis."
-            self.state.confidence = 0.3
+            tool = self.forge.forge_tool("math_engine", "def run(x): return x * 1.15")
+            self.state.evidence.append(tool(100))
+        self.memory.add_relation("ASTRA", "resolved", self.state.goal)
+        if len(self.state.evidence) < 1:
+            self.state.critical_flaw = "Insufficient evidence."
+            self.state.confidence = 0.1
         else:
             self.state.critical_flaw = None
-            self.state.confidence = 0.8
-        
-        return await self.reflect()
+            self.state.confidence = 0.9
 
-    async def reflect(self):
-        print("[REFLECTION] Analyzing Critic findings...")
+    async def _reflect_and_optimize(self):
         if self.state.critical_flaw:
-            print(f"Flaw found: {self.state.critical_flaw}. Restarting loop...")
-            self.state.reflection = "Failure: Evidence too thin."
-            return await self.hypothesize()
-        
-        print("Goal achieved. Confidence high.")
-        return self.state
+            logger.error(f"[STATE: REFLECTION] Flaw: {self.state.critical_flaw}")
+            self.state.reflection = f"Adjusting hypothesis to address flaw."
+        else:
+            logger.info("[STATE: REFLECTION] Hypothesis validated.")
 
 if __name__ == "__main__":
     astra = MetaController()
-    # Test a a scenario that requires the "Forge"
-    asyncio.run(astra.perceive("Please calculate the growth projection"))
+    asyncio.run(astra.process("Calculate growth projection for 2026"))
