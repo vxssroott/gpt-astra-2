@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from core.cognitive.meta_controller import MetaController
 import asyncio
 
-app = FastAPI(title="GPT ASTRA 2.0 API", description="Production Gateway")
+app = FastAPI(title="GPT ASTRA 2.0 API")
 
 class QueryRequest(BaseModel):
     prompt: str
@@ -14,7 +14,7 @@ astra = MetaController()
 @app.post("/v1/reason")
 async def reason(request: QueryRequest):
     try:
-        result = await astra.perceive(request.prompt)
+        result = await astra.process(request.prompt)
         return {"status": "success", "cognitive_state": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
