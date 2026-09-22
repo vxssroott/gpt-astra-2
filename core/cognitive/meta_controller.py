@@ -1,6 +1,8 @@
 import asyncio
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
+from core.tools.forge import ToolForge
+from memory.graph.semantic_graph import KnowledgeGraph
 
 @dataclass
 class CognitiveState:
@@ -9,51 +11,65 @@ class CognitiveState:
     evidence: List[Any]
     confidence: float
     reflection: str
+    critical_flaw: Optional[str] = None
 
 class MetaController:
     """
-    The MetaController is the orchestration heart of ASTRA 2.0.
-    It manages the Cognitive Cycle and decides the next state transition.
+    ASTRA 2.0 MetaController: Integrated with Self-Evolution (Forge) 
+    and Semantic Memory (Graph).
     """
-    def __init__(self, model_engine: Any):
-        self.engine = model_engine
+    def __init__(self):
         self.state = CognitiveState(goal="", hypothesis="", evidence=[], confidence=0.0, reflection="")
+        self.forge = ToolForge()
+        self.memory = KnowledgeGraph()
 
     async def perceive(self, input_data: str):
-        print(f"[PERCEPTION] Analyzing input: {input_data[:50]}...")
+        print(f"\n[PERCEPTION] Input: {input_data}")
         self.state.goal = input_data
-        # In a real impl, this would call the LLM to extract the intent
         return await self.hypothesize()
 
     async def hypothesize(self):
-        print("[HYPOTHESIS] Formulating strategy...")
-        self.state.hypothesis = "Execute multi-step probe and verify via cross-referencing."
+        print("[HYPOTHESIS] Strategy: Deploy probes and verify via Adversarial Critic.")
+        self.state.hypothesis = "Verify goal using specialized tools and relational memory."
         return await self.execute()
 
     async def execute(self):
-        print("[EXECUTION] Deploying agents and tools...")
-        # Simulated execution
-        self.state.evidence.append("Data point A: Verified")
-        self.state.evidence.append("Data point B: Contradictory")
-        return await self.verify()
+        print("[EXECUTION] Executing cognitive tasks...")
+        
+        # Example of using the Forge to create a tool on the fly
+        if "calculate" in self.state.goal.lower():
+            calc_tool = self.forge.forge_tool("fast_calc", "def run(x): return x * 1.1")
+            self.state.evidence.append(calc_tool(100))
+        
+        # Store discovery in Semantic Memory
+        self.memory.add_relation("ASTRA", "processed", self.state.goal)
+        self.state.evidence.append("Relational link created in memory.")
+        
+        return await self.criticize()
 
-    async def verify(self):
-        print("[VERIFICATION] Analyzing evidence quality...")
-        # Logic to check for contradictions
-        self.state.confidence = 0.75 if len(self.state.evidence) > 1 else 0.4
+    async def criticize(self):
+        print("[ADVERSARIAL CRITIC] Attempting to debunk current evidence...")
+        # The Critic simulates a second agent trying to find a flaw
+        if len(self.state.evidence) < 2:
+            self.state.critical_flaw = "Insufficient evidence to support hypothesis."
+            self.state.confidence = 0.3
+        else:
+            self.state.critical_flaw = None
+            self.state.confidence = 0.8
+        
         return await self.reflect()
 
     async def reflect(self):
-        print("[REFLECTION] Optimizing cognitive path...")
-        self.state.reflection = "Hypothesis partially validated. Need more data on Point B."
-        if self.state.confidence < 0.9:
-            print("Confidence low. Restarting cycle with refined hypothesis...")
+        print("[REFLECTION] Analyzing Critic findings...")
+        if self.state.critical_flaw:
+            print(f"Flaw found: {self.state.critical_flaw}. Restarting loop...")
+            self.state.reflection = "Failure: Evidence too thin."
             return await self.hypothesize()
         
-        print("Goal achieved with high confidence.")
+        print("Goal achieved. Confidence high.")
         return self.state
 
-# Simple test runner
 if __name__ == "__main__":
-    astra = MetaController(model_engine=None)
-    asyncio.run(astra.perceive("Rebuild the world's most advanced AI framework"))
+    astra = MetaController()
+    # Test a a scenario that requires the "Forge"
+    asyncio.run(astra.perceive("Please calculate the growth projection"))
